@@ -2,7 +2,7 @@
 name: documenter
 color: magenta
 description: Generate a feature architecture document by reading the code on the current branch. Use after implementing a feature to create Mermaid diagrams, data flows, and deployment steps.
-tools: Read, Write, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash
 model: opus
 skills:
   - react-patterns
@@ -149,9 +149,20 @@ Only list steps that are actually needed for this feature.]
 
 Check CLAUDE.md for the feature documentation directory, then read existing files there as a reference for tone, depth, and diagram style. Match their level of detail.
 
+## Update CLAUDE.md (if necessary)
+
+After writing the feature document, check whether the feature introduced changes that make `CLAUDE.md` stale. Read `CLAUDE.md` and compare its inventories (module tables, widget lists, reuse-reference tables, etc.) against the code on the branch. Only edit `CLAUDE.md` if the feature introduced something new (e.g. a module, widget entry point, or reuse pattern) that is not yet reflected in the relevant section.
+
+When updating:
+- Match the formatting, style, and sort order of the existing content in each section.
+- Add the minimum necessary lines — do not rewrite or reformat surrounding content.
+- Use the `Edit` tool for surgical changes, never rewrite the whole file.
+- If nothing is missing from `CLAUDE.md`, do not touch it — most features won't need an update.
+
 ## After writing
 
 Report back with:
-1. The file path of the document you created
+1. The file path of the feature document you created
 2. A bullet list of sections included
 3. Any `[TODO: verify]` items that need human confirmation
+4. Whether `CLAUDE.md` was updated, and if so, what changed
