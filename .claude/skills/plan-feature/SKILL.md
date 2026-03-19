@@ -1,7 +1,7 @@
 ---
 name: plan-feature
 description: Orchestrate the full planning workflow for a feature. Runs codebase research, impact analysis, and produces a file-by-file implementation plan. Use when starting work on a new feature, especially multi-layer features that span backend and frontend.
-argument-hint: [Path to requirements file (e.g., docs/requirements/ABC-123.xml)]
+argument-hint: [Path to requirements file (e.g., docs/requirements/ABC-123/description.md)]
 disable-model-invocation: true
 ---
 
@@ -21,7 +21,7 @@ Run these commands in parallel to establish context:
 
 ## Phase 1: Read requirements and identify scope
 
-1. **Read the requirements.** If $ARGUMENTS is a file path (e.g. `docs/requirements/ABC-123.xml`), read it. If it's a ticket number, look for a matching file in `docs/requirements/`. If it's a description, use it directly.
+1. **Read the requirements.** If $ARGUMENTS is a file path (e.g. `docs/requirements/ABC-123/description.md`), read it. If it's a ticket number, look for a matching file in `docs/requirements/`. If it's a description, use it directly.
 
 2. **Read CLAUDE.md** — specifically the **Reuse Before Reimplementing** section, the **Custom Magento Modules** table, and the **Architecture** section. Identify:
 
@@ -33,15 +33,17 @@ Run these commands in parallel to establish context:
 
 ## Phase 2: Research via codebase-qa agents
 
-Based on the analogues and technical needs identified in Phase 1, use the **Agent tool** to launch **2–5 `codebase-qa` agents in parallel**. Each agent call must use `subagent_type: "codebase-qa"`.
+Based on the analogues and technical needs identified in Phase 1, use the **Agent tool** to launch `codebase-qa` agents in parallel. Each agent call must use `subagent_type: "codebase-qa"`.
 
-**Formulate targeted questions.** Each question should target a specific cross-layer flow or integration point. Examples (adapt to the actual feature):
+**Goal: minimise agent count while covering all integration points.** Each agent should cover a broad, coherent domain — not a single narrow question. Aim for **2–3 agents** that together cover the full scope. Only use 4 if the feature genuinely spans unrelated domains (e.g. a frontend widget AND an unrelated backend module AND email AND shipping).
 
-- "How does the [reference module] resolver receive form data and pass it to the model? Show the full flow from schema.graphqls to the model method."
-- "What data attributes does the [reference widget] read from its mount element, and where does the PHTML template set them?"
-- "How does [reference module] handle email sending — what's the flow from resolver through to TransportBuilder, including branch routing and BCC?"
-- "What admin config fields does [reference module] define in system.xml and how are they read in the model via ScopeConfigInterface?"
-- "How does the [reference form] component structure its steps, and how does cross-step data sharing work?"
+**Anti-pattern to avoid:** Do NOT launch separate agents for topics that share the same files. For example, "customer attributes" and "registration form" both involve the Customer module — combine them into one agent that investigates the Customer module end-to-end.
+
+**Formulate broad domain questions.** Each question should cover a complete domain area, asking the agent to trace the full flow. Examples (adapt to the actual feature):
+
+- "Investigate the [reference module] end-to-end: what EAV attributes exist, how is the registration/submission form structured (templates, layout XML, JS), what plugins/observers fire on save, and what admin customizations exist?"
+- "How does the Magento core handle [specific flow] — trace from controller through to model save, including what POST parameters are read and what events are dispatched?"
+- "What is the complete GraphQL + React data flow for [reference feature]? Show schema, resolver, GQL template literal, provider method, types, and component usage."
 
 **How to invoke:** Use the `Agent` tool (NOT "Subagent" — the tool is called `Agent`) like this for each research question:
 
@@ -49,29 +51,41 @@ Based on the analogues and technical needs identified in Phase 1, use the **Agen
 Agent tool call:
   description: "Research [topic]"
   subagent_type: "codebase-qa"
-  prompt: "[your targeted question]"
+  prompt: "[your broad domain question]"
 ```
 
 **Guidelines:**
 
-- Launch at least 2 Agent calls, up to 5 depending on feature complexity
-- Each question targets ONE specific flow — not "tell me everything about module X"
+- Launch **2–3 Agent calls** (only 4 if the feature spans truly unrelated domains)
+- Each question covers a **complete domain** — not a single file or class
+- Ensure no two agents will read the same module or files — if they would, merge them
 - Launch ALL Agent calls in a single message for parallel execution
 - Wait for all to complete before proceeding
 
-**Record results.** For each agent, note the question asked and a one-line summary of the key finding. You'll pass these to the planner.
+**Record results.** For each agent, note the domain investigated and a one-line summary of the key finding. You'll pass these to the planner.
 
 ## Phase 3: Impact analysis via impact-analyser agents
 
-After research completes, identify which **existing shared files** the feature will need to modify. Typical candidates:
+After research completes, decide whether impact analysis is needed. **This phase is expensive — only run it when justified.**
 
-- The GraphQL provider singleton (adding new methods)
-- The shared TypeScript types file (adding new types)
-- The GQL barrel index (adding new exports)
-- Existing admin config sections (adding new groups/fields)
-- Shared PHP interfaces in `Api/`
+### When to SKIP this phase
 
-**If shared files will be modified**, use the **Agent tool** to launch **1–3 `impact-analyser` agents in parallel**, one per high-risk shared file:
+Skip impact analysis and note "Impact analysis: skipped" when ANY of these apply:
+
+- The feature is **mostly additive** — primarily new files within one module, with only minor modifications to existing shared files (e.g. adding entries to di.xml, adding a block to layout XML, appending to a types file)
+- The feature **extends a single module** without touching cross-module shared interfaces
+- The research agents already identified the exact files and changes needed — the feature-planner agent will read those files itself
+
+### When to RUN this phase
+
+Run impact analysis **only** when the feature modifies **high-risk shared infrastructure** that multiple other features depend on:
+
+- Changing the signature or behaviour of existing shared interfaces in `Api/`
+- Restructuring the GraphQL provider singleton (not just adding methods — changing existing ones)
+- Modifying shared configuration that affects multiple modules
+- Replacing or removing existing shared components
+
+If justified, use the **Agent tool** to launch **1–2 `impact-analyser` agents** (not more), one per high-risk shared area:
 
 ```
 Agent tool call:
@@ -79,14 +93,6 @@ Agent tool call:
   subagent_type: "impact-analyser"
   prompt: "Analyse the impact of [modification] to [file]"
 ```
-
-Example prompts:
-
-- "Analyse the impact of adding new methods to [provider singleton file]"
-- "Analyse the impact of modifying [shared types file] to add [new types]"
-- "Analyse the impact of adding a new group to [admin config section]"
-
-**If the feature only creates new files** with no modifications to existing shared code, skip this phase. Note: "Impact analysis: skipped (all new files, no shared modifications)."
 
 **Record results.** For each agent, note the target analysed and a one-line summary of findings.
 

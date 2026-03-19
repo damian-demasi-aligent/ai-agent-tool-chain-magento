@@ -19,7 +19,7 @@ The project follows a standard Magento 2 layout. Check CLAUDE.md's **Architectur
 - **Custom modules** under `app/code/<VendorNamespace>/` (vendor namespace is in CLAUDE.md → Project Overview)
 - **React/frontend source** (if applicable) — location and structure documented in CLAUDE.md → Architecture → React + Vite Integration
 - **Theme** — path and parent theme documented in CLAUDE.md → Architecture → Magento Theme
-- **docs/** — feature documentation, implementation plans, and these manuals
+- **docs/** — feature documentation, implementation plans, workflow scripts, and these manuals
 
 ---
 

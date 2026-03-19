@@ -55,12 +55,20 @@ Agent tool call:
 
 Read the plan file first, then follow its implementation checklist in order. The plan contains all the context you need — file paths, pattern sources, and implementation details.
 
+IMPORTANT — Read vendor integration points before writing code:
+Before writing any plugin, observer, or code that hooks into Magento core, read the relevant vendor source code to understand the exact flow. This prevents integration bugs that cannot be caught from project code alone. For example:
+- If hooking into a controller: read the controller's execute() method
+- If writing a plugin on a repository save: read the save() method for side effects
+- If dispatching or observing events: read where the event is dispatched and what state exists at that point
+Your agent instructions have the full list of what to read — follow step 5 carefully.
+
 After implementation, run verification checks and produce the change summary as described in your instructions."
 ```
 
 The feature-implementer agent will:
 
 - Read the plan and CLAUDE.md
+- Read vendor source code for integration points (controllers, repositories, event dispatchers)
 - Implement each checklist item in order
 - Run type-check, lint, and build verification
 - Produce a structured change summary

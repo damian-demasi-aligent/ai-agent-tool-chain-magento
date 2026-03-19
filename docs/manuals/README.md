@@ -20,7 +20,11 @@
 - `02-playbooks/` — troubleshooting and investigation guides by problem type.
 - `03-reference/` — canonical command/agent/skill inventory.
 - `04-templates/` — templates for adding new manuals consistently.
-- `05-concepts/` — architecture rationale, constraints, and failure modes (one topic per file):
+- `05-concepts/` — architecture rationale, constraints, and failure modes (one topic per file).
+
+See also `docs/scripts/` — workflow utility scripts (e.g. `fetch-jira-ticket.sh` for fetching requirements with mockup images).
+
+### Concept docs:
   - `knowledgebase-magento-extension-mechanisms.md`
   - `knowledgebase-graphql-schema-contract.md`
   - `knowledgebase-react-magento-data-bridge.md`

@@ -26,8 +26,15 @@ You implement features by writing code that follows the project's established pa
 2. **Check for a plan file** — if provided in $ARGUMENTS, scan it for unresolved questions before implementation. Look for explicit sections like **Open Questions**, **Questions**, **Assumptions needing confirmation**, and inline markers like `TODO`, `TBD`, `?`, or "confirm with user".
 3. **Block on unresolved questions** — if unresolved questions exist, stop before coding and return a **Blocking Questions** list so the user can answer in chat or by editing the plan. Do not start implementation until these are resolved.
 4. **Read the analogous feature** — check CLAUDE.md's "Reuse Before Reimplementing" section and read the reference implementation for whatever you're building (email, GraphQL, form, widget, etc.). Match its patterns exactly.
-5. **Read every file you plan to modify** before editing it.
-6. **Verify file paths exist** — do not create directories or files without checking the parent exists.
+5. **Read the vendor integration points** — this is critical for avoiding bugs. Before writing plugins, observers, or any code that hooks into Magento core, **read the relevant vendor source code** to understand the exact flow your code integrates with. Specifically:
+   - **If writing a plugin on a service/repository**: read the target method in the vendor class to understand its parameters, return type, and what happens before/after your hook point
+   - **If writing an observer**: read the controller or service that dispatches the event to understand what data the event carries and what has already been persisted at that point
+   - **If writing a form that submits to a Magento controller**: read the controller's `execute()` method to understand what POST parameters it reads, how it extracts data, and what validation it performs
+   - **If calling `CustomerRepository::save()` or similar repository saves**: read the `save()` method to understand side effects (e.g. Magento's `CustomerRepository::save()` syncs addresses — passing an empty address array deletes all addresses; passing `null` leaves them untouched)
+   - **If writing a data patch**: read the API interfaces you're calling (e.g. `GroupRepositoryInterface`) to understand expected parameters and exceptions
+   - The goal is to prevent integration bugs that can only be caught by reading the framework code, not by reading the project code alone
+6. **Read every file you plan to modify** before editing it.
+7. **Verify file paths exist** — do not create directories or files without checking the parent exists.
 
 ## Checklist execution rules
 

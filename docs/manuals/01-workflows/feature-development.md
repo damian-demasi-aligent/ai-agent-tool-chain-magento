@@ -98,7 +98,8 @@ The committer proposes a logical commit plan. Review it, then reply `"go"` to ex
 
 ```mermaid
 flowchart TD
-    A["1️⃣ Phase 1: Plan<br/>/plan-feature (orchestrates research + planning)"] --> B{Open questions?}
+    Z["0️⃣ Phase 0: Fetch requirements<br/>./docs/scripts/fetch-jira-ticket.sh"] --> A
+    A["1️⃣ Phase 1: Plan<br/>/plan-feature docs/requirements/TICKET-XXX/description.md"] --> B{Open questions?}
     B -- Yes --> C[Resolve open questions<br/>Refine scope]
     C --> D
     B -- No --> D[Save approved plan<br/>docs/plans/TICKET-XXX-feature-name.md]
@@ -121,13 +122,21 @@ Use this path for features spanning multiple layers (for example: PHP module wor
 
 **Model allocation principle — "Opus reasons, Sonnet reads":** Research agents (`codebase-qa`, `impact-analyser`) and mechanical agents (`preflight`, `committer`, `test-runner`) run on Sonnet for speed and cost efficiency. Reasoning-heavy agents (`feature-planner`, `feature-implementer`, `reviewer`, `documenter`) run on Opus for higher-quality output.
 
+### Phase 0 — Fetch requirements
+
+```bash
+./docs/scripts/fetch-jira-ticket.sh <email> <api-token> <TICKET-ID>
+```
+
+Fetches the full Jira ticket (description, comments, and all attachments including mockup images) into `docs/requirements/<TICKET-ID>/`. This step ensures the planner has access to UI mockups for correct layout placement — not just the text description. The script requires a Jira API token (generate at https://id.atlassian.com/manage-profile/security/api-tokens).
+
 ### Phase 1 — Plan
 
 ```
-/plan-feature [requirements file path, ticket number, or feature description]
+/plan-feature docs/requirements/<TICKET-ID>/description.md
 ```
 
-The `/plan-feature` skill orchestrates the full planning workflow: it spawns `codebase-qa` sub-agents to research how reference features implement the needed patterns, spawns `impact-analyser` sub-agents to assess ripple effects on shared files, then passes all findings to the `@feature-planner` agent. The planner synthesizes the research into a file-by-file implementation plan ordered by layer. Save its output to `docs/plans/TICKET-XXX-feature-name.md`.
+The `/plan-feature` skill orchestrates the full planning workflow: it spawns `codebase-qa` sub-agents to research how reference features implement the needed patterns, spawns `impact-analyser` sub-agents to assess ripple effects on shared files, then passes all findings to the `@feature-planner` agent. The planner synthesizes the research into a file-by-file implementation plan ordered by layer — and can read mockup images in `docs/requirements/<TICKET-ID>/attachments/` for UI placement context. Save its output to `docs/plans/TICKET-XXX-feature-name.md`.
 
 > **Before implementing — comprehension checkpoint:** Don't just resolve open questions. Verify you can explain the feature's data flow end-to-end from the plan: how user input enters, crosses layers, gets processed, and returns. If you can't, use `@codebase-qa` to fill gaps before proceeding. Approving a plan you don't understand leads to comprehension debt (see `05-concepts/knowledgebase-comprehension-debt.md`).
 
