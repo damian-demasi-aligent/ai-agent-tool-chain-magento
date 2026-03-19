@@ -153,7 +153,7 @@ docs/
 
 ### How each folder is used
 
-**`docs/requirements/`** — Jira ticket content (description, comments, mockup images) fetched via `docs/scripts/fetch-jira-ticket.sh`. The `feature-planner` agent reads these to understand scope — including attached images for UI placement. To fetch a ticket: `./docs/scripts/fetch-jira-ticket.sh <email> <api-token> <TICKET-ID>`
+**`docs/requirements/`** — Jira ticket content (description, comments, mockup images) fetched via `docs/scripts/fetch-jira-ticket.sh`. The `feature-planner` agent reads these to understand scope — including attached images for UI placement. To fetch a ticket: `./docs/scripts/fetch-jira-ticket.sh <TICKET-ID>` (reads credentials from `.env.development` — see `.env.development.example`)
 
 **`docs/plans/`** — Save `feature-planner` output here as `CCG-XXX-feature-name.md` before implementation begins. The `feature-implementer` agent takes a plan file as its input. Plans are living documents — update them if scope changes during implementation.
 

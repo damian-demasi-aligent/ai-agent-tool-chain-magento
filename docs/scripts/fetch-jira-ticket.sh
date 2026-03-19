@@ -4,10 +4,16 @@
 # and save everything to docs/requirements/ for use with /plan-feature.
 #
 # Usage:
-#   ./docs/scripts/fetch-jira-ticket.sh <email> <api-token> <ticket-id>
+#   ./docs/scripts/fetch-jira-ticket.sh <ticket-id>                          (reads credentials from .env.development)
+#   ./docs/scripts/fetch-jira-ticket.sh <email> <api-token> <ticket-id>      (explicit credentials)
 #
 # Example:
-#   ./docs/scripts/fetch-jira-ticket.sh user@aligent.com.au xxxxxxxxxxx CCG-676
+#   ./docs/scripts/fetch-jira-ticket.sh ABC-123
+#   ./docs/scripts/fetch-jira-ticket.sh user@aligent.com.au xxxxxxxxxxx ABC-123
+#
+# Credentials:
+#   Set JIRA_EMAIL and JIRA_API_TOKEN in .env.development (see .env.development.example).
+#   CLI arguments override .env.development values.
 #
 # Output:
 #   docs/requirements/<TICKET>/
@@ -21,25 +27,52 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Arguments
+# Resolve repo root early (needed for .env.development lookup)
 # ---------------------------------------------------------------------------
-if [[ $# -lt 3 ]]; then
-    echo "Usage: $0 <jira-email> <jira-api-token> <ticket-id>"
-    echo "Example: $0 user@aligent.com.au xxxxxxxx CCG-676"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# ---------------------------------------------------------------------------
+# Load .env.development if it exists
+# ---------------------------------------------------------------------------
+ENV_FILE="${REPO_ROOT}/.env.development"
+if [[ -f "${ENV_FILE}" ]]; then
+    # Source only JIRA_* vars to avoid polluting the environment
+    JIRA_EMAIL="${JIRA_EMAIL:-$(grep -E '^JIRA_EMAIL=' "${ENV_FILE}" | cut -d'=' -f2- | tr -d "'" | tr -d '"')}"
+    JIRA_TOKEN="${JIRA_API_TOKEN:-$(grep -E '^JIRA_API_TOKEN=' "${ENV_FILE}" | cut -d'=' -f2- | tr -d "'" | tr -d '"')}"
+fi
+
+# ---------------------------------------------------------------------------
+# Arguments — support both 1-arg and 3-arg forms
+# ---------------------------------------------------------------------------
+if [[ $# -eq 1 ]]; then
+    TICKET_ID="$1"
+elif [[ $# -ge 3 ]]; then
+    JIRA_EMAIL="$1"
+    JIRA_TOKEN="$2"
+    TICKET_ID="$3"
+else
+    echo "Usage: $0 <ticket-id>                           (uses .env.development credentials)"
+    echo "       $0 <jira-email> <jira-api-token> <ticket-id>"
+    echo ""
+    echo "Example: $0 ABC-123"
+    echo ""
+    echo "Set JIRA_EMAIL and JIRA_API_TOKEN in .env.development (see .env.development.example)."
     exit 1
 fi
 
-JIRA_EMAIL="$1"
-JIRA_TOKEN="$2"
-TICKET_ID="$3"
+# Validate credentials are available
+if [[ -z "${JIRA_EMAIL:-}" || -z "${JIRA_TOKEN:-}" ]]; then
+    echo "Error: Jira credentials not found."
+    echo "Either pass them as arguments or set JIRA_EMAIL and JIRA_API_TOKEN in .env.development"
+    echo "See .env.development.example for the expected format."
+    exit 1
+fi
 
 JIRA_BASE="https://aligent.atlassian.net"
 API_URL="${JIRA_BASE}/rest/api/3/issue/${TICKET_ID}"
 AUTH="${JIRA_EMAIL}:${JIRA_TOKEN}"
 
-# Resolve repo root (the directory containing docs/)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 OUTPUT_DIR="${REPO_ROOT}/docs/requirements/${TICKET_ID}"
 ATTACH_DIR="${OUTPUT_DIR}/attachments"
 

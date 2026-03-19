@@ -125,10 +125,12 @@ Use this path for features spanning multiple layers (for example: PHP module wor
 ### Phase 0 — Fetch requirements
 
 ```bash
-./docs/scripts/fetch-jira-ticket.sh <email> <api-token> <TICKET-ID>
+./docs/scripts/fetch-jira-ticket.sh <TICKET-ID>
 ```
 
-Fetches the full Jira ticket (description, comments, and all attachments including mockup images) into `docs/requirements/<TICKET-ID>/`. This step ensures the planner has access to UI mockups for correct layout placement — not just the text description. The script requires a Jira API token (generate at https://id.atlassian.com/manage-profile/security/api-tokens).
+Fetches the full Jira ticket (description, comments, and all attachments including mockup images) into `docs/requirements/<TICKET-ID>/`. This step ensures the planner has access to UI mockups for correct layout placement — not just the text description.
+
+Credentials are read from `.env.development` (`JIRA_EMAIL` and `JIRA_API_TOKEN`). See `.env.development.example` for the format. You can also pass credentials explicitly: `./docs/scripts/fetch-jira-ticket.sh <email> <token> <TICKET-ID>`.
 
 ### Phase 1 — Plan
 
